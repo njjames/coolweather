@@ -23,6 +23,7 @@ import com.coolweather.android.util.Utility;
 import org.litepal.crud.DataSupport;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import okhttp3.Call;
@@ -42,7 +43,7 @@ public class ChooseAreaFragment extends Fragment {
     private Button mBackButton;
     private TextView mTitleText;
     private ListView mListView;
-    private List<String> mDataList;
+    private List<String> mDataList = new ArrayList<>();
     private ArrayAdapter<String> mAdapter;
     private int mCurrentLevel;
     private List<Province> mProvinceList;
@@ -117,6 +118,7 @@ public class ChooseAreaFragment extends Fragment {
         mProvinceList = DataSupport.findAll(Province.class);
         //如果数据库中查询到了就从数据库中获取，否则从服务器上获取
         if (mProvinceList.size() > 0) {
+            mDataList.clear();
             //将省的名称添加到adapter对应的集合中
             for (Province province : mProvinceList) {
                 mDataList.add(province.getProvinceName());
@@ -143,6 +145,8 @@ public class ChooseAreaFragment extends Fragment {
         //从数据库中查询当前省中所有的市
         mCityList = DataSupport.where("provinceId = ?", String.valueOf(mSelectProvince.getProvinceCode())).find(City.class);
         if (mCityList.size() > 0) {
+            //必须先清空adapter集合中的内容
+            mDataList.clear();
             for (City city : mCityList) {
                 mDataList.add(city.getCityName());
             }
@@ -163,6 +167,7 @@ public class ChooseAreaFragment extends Fragment {
         mBackButton.setVisibility(View.VISIBLE);
         mCountyList = DataSupport.where("cityId = ?", String.valueOf(mSelectCity.getCityCode())).find(County.class);
         if (mCountyList.size() > 0) {
+            mDataList.clear();
             for (County county : mCountyList) {
                 mDataList.add(county.getCountyName());
             }
@@ -176,6 +181,7 @@ public class ChooseAreaFragment extends Fragment {
     }
 
     private void queryFromServer(String address, final String type) {
+        showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -190,7 +196,6 @@ public class ChooseAreaFragment extends Fragment {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                showProgressDialog();
                 String responseText = response.body().string();
                 boolean result = false;
                 if ("province".equals(type)) {
