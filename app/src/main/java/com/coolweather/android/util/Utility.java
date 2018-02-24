@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
+import com.coolweather.android.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -90,5 +92,27 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    /**
+     * 根据返回的json字符串，解析成为Weather对象
+     * @param response
+     * @return
+     */
+    public static Weather handleWeatherResponse(String response) {
+        JSONObject jsonObject = null;
+        try {
+            //先解析返回的json字符串为JSONObject
+            jsonObject = new JSONObject(response);
+            //获取key为HeWeather6的jsonArray
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
+            //获取JSONArray的第一个值，并转化为json格式的字符串
+            String weatherContent = jsonArray.getJSONArray(0).toString();
+            //利用GSON来解析上面的字符串
+            return new Gson().fromJson(weatherContent, Weather.class);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
