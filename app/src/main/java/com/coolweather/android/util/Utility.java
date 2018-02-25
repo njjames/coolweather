@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
+import com.coolweather.android.gson.AQI;
 import com.coolweather.android.gson.Weather;
 import com.google.gson.Gson;
 
@@ -96,20 +97,39 @@ public class Utility {
 
     /**
      * 根据返回的json字符串，解析成为Weather对象
-     * @param response
+     * @param weatherResponse
      * @return
      */
-    public static Weather handleWeatherResponse(String response) {
-        JSONObject jsonObject = null;
+    public static Weather handleWeatherResponse(String weatherResponse) {
         try {
             //先解析返回的json字符串为JSONObject
-            jsonObject = new JSONObject(response);
+            JSONObject jsonObject = new JSONObject(weatherResponse);
             //获取key为HeWeather6的jsonArray
             JSONArray jsonArray = jsonObject.getJSONArray("HeWeather6");
-            //获取JSONArray的第一个值，并转化为json格式的字符串
-            String weatherContent = jsonArray.getJSONArray(0).toString();
-            //利用GSON来解析上面的字符串
-            return new Gson().fromJson(weatherContent, Weather.class);
+            //获取JSONArray的第一个值(JSONObject)，并转化为json格式的字符串
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+            //利用GSON来解析上面的字符串(这里是没有AQI的)
+            Weather weather = new Gson().fromJson(weatherContent, Weather.class);
+            return weather;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 根据返回的json字符串，解析成为AQI对象
+     * @param aqiResponse
+     * @return
+     */
+    public static AQI handleAQIResponse(String aqiResponse) {
+        try {
+            //解析aqiResponse获取AQI信息
+            JSONObject aqijsonObject = new JSONObject(aqiResponse);
+            JSONArray aqijsonArray = aqijsonObject.getJSONArray("HeWeather6");
+            String air_now_city = aqijsonArray.getJSONObject(0).getJSONObject("air_now_city").toString();
+            AQI aqi = new Gson().fromJson(air_now_city, AQI.class);
+            return aqi;
         } catch (JSONException e) {
             e.printStackTrace();
         }
