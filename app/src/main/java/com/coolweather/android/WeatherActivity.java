@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageView;
@@ -42,6 +43,7 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView mCarWashText;
     private ScrollView mWeatherLayout;
     private ImageView mBingPicImg;
+    private SwipeRefreshLayout mSwipeRefresh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +68,9 @@ public class WeatherActivity extends AppCompatActivity {
         mSportText = findViewById(R.id.sport_text);
         mCarWashText = findViewById(R.id.car_wash_text);
         mBingPicImg = findViewById(R.id.bing_pic_img);
+        mSwipeRefresh = findViewById(R.id.swipe_refresh);
+
+        mSwipeRefresh.setColorSchemeResources(R.color.colorPrimary);
 
         //获取sp，先充sp中获取天气信息
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -79,20 +84,30 @@ public class WeatherActivity extends AppCompatActivity {
         }else {
             loadBingPic();
         }
+        final String weatherId;
         //如果可以获取到，就解析，然后显示出来
         if (weatherString != null && aqiString != null) {
             Weather weather = Utility.handleWeatherResponse(weatherString);
             AQI aqi = Utility.handleAQIResponse(aqiString);
+            weatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
             showAQIInfo(aqi);
         }else {
             //否则就去服务器获取天气信息
-            String weatherId = getIntent().getStringExtra("weatherId");
+            weatherId = getIntent().getStringExtra("weatherId");
             //请求数据时把ScrollView隐藏
             mWeatherLayout.setVisibility(View.GONE);
             requestWeather(weatherId);
             requestAQI(weatherId);
         }
+
+        mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(weatherId);
+                requestAQI(weatherId);
+            }
+        });
 
     }
 
@@ -180,6 +195,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        mSwipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -201,6 +217,7 @@ public class WeatherActivity extends AppCompatActivity {
                         }else {
                             Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
                         }
+                        mSwipeRefresh.setRefreshing(false);
                     }
                 });
 
