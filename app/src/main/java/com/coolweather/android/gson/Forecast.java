@@ -10,8 +10,10 @@ import com.google.gson.annotations.SerializedName;
 public class Forecast {
     public String date; //预报的日期
 
+    @SerializedName("tmp_max")
     public String temperatureMax; //最高温度
 
+    @SerializedName("tmp_min")
     public String temperatureMin; //最低温度
 
     @SerializedName("cond_txt_d")

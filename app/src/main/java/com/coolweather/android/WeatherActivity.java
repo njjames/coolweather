@@ -1,11 +1,12 @@
 package com.coolweather.android;
 
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,8 +16,6 @@ import com.coolweather.android.gson.Lifestyle;
 import com.coolweather.android.gson.Weather;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.List;
@@ -37,12 +36,14 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView mComfortText;
     private TextView mSportText;
     private TextView mCarWashText;
+    private ScrollView mWeatherLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather);
 
+        mWeatherLayout = findViewById(R.id.weather_layout);
         mTitleCity = findViewById(R.id.title_city);
         mTitleUpdateTime = findViewById(R.id.title_update_time);
         mDegressText = findViewById(R.id.degress_text);
@@ -57,7 +58,7 @@ public class WeatherActivity extends AppCompatActivity {
         //获取sp，先充sp中获取天气信息
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = sharedPreferences.getString("weather", null);
-        String aqiString = sharedPreferences.getString("aqiString", null);
+        String aqiString = sharedPreferences.getString("aqi", null);
         //如果可以获取到，就解析，然后显示出来
         if (weatherString != null && aqiString != null) {
             Weather weather = Utility.handleWeatherResponse(weatherString);
@@ -67,6 +68,8 @@ public class WeatherActivity extends AppCompatActivity {
         }else {
             //否则就去服务器获取天气信息
             String weatherId = getIntent().getStringExtra("weatherId");
+            //请求数据时把ScrollView隐藏
+            mWeatherLayout.setVisibility(View.GONE);
             requestWeather(weatherId);
             requestAQI(weatherId);
         }
@@ -93,7 +96,7 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String aqiString = response.body().string();
-                final AQI aqi = Utility.handleAQIResponse(aqiAddress);
+                final AQI aqi = Utility.handleAQIResponse(aqiString);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -189,17 +192,20 @@ public class WeatherActivity extends AppCompatActivity {
         for (Lifestyle lifestyle : lifestyleList) {
             switch (lifestyle.type) {
                 case "comf":
-                    mComfortText.setText(lifestyle.lifttext);
+                    mComfortText.setText("舒适度：" + lifestyle.lifttext);
                     break;
                 case "cw":
-                    mCarWashText.setText();
+                    mCarWashText.setText("洗车指数：" + lifestyle.lifttext);
                     break;
                 case "sport":
+                    mSportText.setText("运动建议：" + lifestyle.lifttext);
                     break;
                 default:
 
             }
         }
+        //显示数据的时候把ScrollView显示出来
+        mWeatherLayout.setVisibility(View.VISIBLE);
     }
 
     /**
