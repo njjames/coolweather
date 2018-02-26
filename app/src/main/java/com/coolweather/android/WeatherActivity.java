@@ -18,12 +18,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.coolweather.android.db.County;
 import com.coolweather.android.gson.AQI;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Lifestyle;
 import com.coolweather.android.gson.Weather;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
+
+import org.litepal.crud.DataSupport;
 
 import java.io.IOException;
 import java.util.List;
@@ -162,7 +165,9 @@ public class WeatherActivity extends AppCompatActivity {
      * @param weatherId
      */
     public void requestAQI(String weatherId) {
-        final String aqiAddress = "https://free-api.heweather.com/s6/air/now?location=" + weatherId + "&key=e01a58275e4c4248a2ea86c17e994b64";
+        //需要根据当前的weatherId获取到县所属市中的第一个县的weatherId
+        String cityWeatherId = getCityWeatherId(weatherId);
+        final String aqiAddress = "https://free-api.heweather.com/s6/air/now?location=" + cityWeatherId + "&key=e01a58275e4c4248a2ea86c17e994b64";
         HttpUtil.sendOkHttpRequest(aqiAddress, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -194,6 +199,21 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    /**
+     * 需要根据当前的weatherId获取到县所属市中的第一个县的weatherId
+     * @param weatherId
+     * @return
+     */
+    private String getCityWeatherId(String weatherId) {
+        //获取weatherId对应的county
+        County county = DataSupport.where("weatherId = ?", weatherId).findFirst(County.class);
+        //获取县所属的市
+        int cityId = county.getCityId();
+        //获取该市所属的第一个县
+        County firstCounty = DataSupport.where("cityId = ?", String.valueOf(cityId)).findFirst(County.class);
+        return firstCounty.getWeatherId();
     }
 
     /**
