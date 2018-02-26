@@ -5,9 +5,12 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -44,6 +47,8 @@ public class WeatherActivity extends AppCompatActivity {
     private ScrollView mWeatherLayout;
     private ImageView mBingPicImg;
     private SwipeRefreshLayout mSwipeRefresh;
+    private Button mNavBtn;
+    private DrawerLayout mDrawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +74,8 @@ public class WeatherActivity extends AppCompatActivity {
         mCarWashText = findViewById(R.id.car_wash_text);
         mBingPicImg = findViewById(R.id.bing_pic_img);
         mSwipeRefresh = findViewById(R.id.swipe_refresh);
+        mNavBtn = findViewById(R.id.nav_btn);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
 
         mSwipeRefresh.setColorSchemeResources(R.color.colorPrimary);
 
@@ -106,6 +113,13 @@ public class WeatherActivity extends AppCompatActivity {
             public void onRefresh() {
                 requestWeather(weatherId);
                 requestAQI(weatherId);
+            }
+        });
+
+        mNavBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mDrawerLayout.openDrawer(GravityCompat.START);
             }
         });
 
@@ -147,7 +161,7 @@ public class WeatherActivity extends AppCompatActivity {
      * 根据天气ID获取空气质量信息
      * @param weatherId
      */
-    private void requestAQI(String weatherId) {
+    public void requestAQI(String weatherId) {
         final String aqiAddress = "https://free-api.heweather.com/s6/air/now?location=" + weatherId + "&key=e01a58275e4c4248a2ea86c17e994b64";
         HttpUtil.sendOkHttpRequest(aqiAddress, new Callback() {
             @Override
@@ -186,7 +200,7 @@ public class WeatherActivity extends AppCompatActivity {
      * 从服务器上，根据天气id，获取天气信息
      * @param weatherId
      */
-    private void requestWeather(String weatherId) {
+    public void requestWeather(String weatherId) {
         String weatherAddress = "https://free-api.heweather.com/s6/weather?location=" + weatherId + "&key=e01a58275e4c4248a2ea86c17e994b64";
         HttpUtil.sendOkHttpRequest(weatherAddress, new Callback() {
             @Override
@@ -288,5 +302,13 @@ public class WeatherActivity extends AppCompatActivity {
             mAqiText.setText(aqi.aqi);
             mPm25Text.setText(aqi.pm25);
         }
+    }
+
+    public DrawerLayout getDrawerLayout() {
+        return mDrawerLayout;
+    }
+
+    public SwipeRefreshLayout getSwipeRefresh() {
+        return mSwipeRefresh;
     }
 }

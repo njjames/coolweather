@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -90,10 +93,24 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 }else if(mCurrentLevel == LEVEL_COUNTY) { //如果当前是县的界面就去显示天气
                     String weatherId = mCountyList.get(position).getWeatherId();
-                    Intent intent = new Intent(getContext(), WeatherActivity.class);
-                    intent.putExtra("weatherId", weatherId);
-                    startActivity(intent);
-                    getActivity().finish();
+                    if (getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getContext(), WeatherActivity.class);
+                        intent.putExtra("weatherId", weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    }else if(getActivity() instanceof WeatherActivity) {
+                        WeatherActivity weatherActivity = (WeatherActivity) getActivity();
+                        //获取到DrawerLayout
+                        DrawerLayout drawerLayout = weatherActivity.getDrawerLayout();
+                        //关闭菜单项
+                        drawerLayout.closeDrawers();
+                        //获取下拉刷新的布局
+                        SwipeRefreshLayout swipeRefresh = weatherActivity.getSwipeRefresh();
+                        //让下拉刷新的布局显示
+                        swipeRefresh.setRefreshing(true);
+                        weatherActivity.requestWeather(weatherId);
+                        weatherActivity.requestAQI(weatherId);
+                    }
                 }
             }
         });
