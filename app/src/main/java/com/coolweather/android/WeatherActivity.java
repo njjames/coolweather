@@ -5,11 +5,13 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.AQI;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Lifestyle;
@@ -37,6 +39,7 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView mSportText;
     private TextView mCarWashText;
     private ScrollView mWeatherLayout;
+    private ImageView mBingPicImg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,11 +57,20 @@ public class WeatherActivity extends AppCompatActivity {
         mComfortText = findViewById(R.id.comfort_text);
         mSportText = findViewById(R.id.sport_text);
         mCarWashText = findViewById(R.id.car_wash_text);
+        mBingPicImg = findViewById(R.id.bing_pic_img);
 
         //获取sp，先充sp中获取天气信息
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = sharedPreferences.getString("weather", null);
         String aqiString = sharedPreferences.getString("aqi", null);
+        //从SP中获取背景图的地址
+        String bingaddress = sharedPreferences.getString("bingaddress", null);
+        //如果有就直接加载为背景图，否则去服务器上请求
+        if (bingaddress != null) {
+            Glide.with(this).load(bingaddress).into(mBingPicImg);
+        }else {
+            loadBingPic();
+        }
         //如果可以获取到，就解析，然后显示出来
         if (weatherString != null && aqiString != null) {
             Weather weather = Utility.handleWeatherResponse(weatherString);
@@ -74,6 +86,38 @@ public class WeatherActivity extends AppCompatActivity {
             requestAQI(weatherId);
         }
 
+    }
+
+    /**
+     * 加载必应背景图片
+     */
+    private void loadBingPic() {
+        String bingUrl = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(bingUrl, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Toast.makeText(WeatherActivity.this, "获取背景图片失败", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingAddress = response.body().string();
+                if (bingAddress != null) {
+                    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString("bingaddress", bingAddress);
+                    editor.apply();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Glide.with(WeatherActivity.this).load(bingAddress).into(mBingPicImg);
+                        }
+                    });
+                }else {
+                    Toast.makeText(WeatherActivity.this, "获取背景图片失败", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     /**
@@ -154,6 +198,8 @@ public class WeatherActivity extends AppCompatActivity {
 
             }
         });
+        //在请求天气信息时也会得到最新的图片
+        loadBingPic();
     }
 
     /**
