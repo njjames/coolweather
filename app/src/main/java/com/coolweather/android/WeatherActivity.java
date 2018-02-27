@@ -1,5 +1,6 @@
 package com.coolweather.android;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -23,6 +24,7 @@ import com.coolweather.android.gson.AQI;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Lifestyle;
 import com.coolweather.android.gson.Weather;
+import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
 
@@ -266,6 +268,14 @@ public class WeatherActivity extends AppCompatActivity {
      * @param weather
      */
     private void showWeatherInfo(Weather weather) {
+        //在这里开启服务
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isautoupdate = sharedPreferences.getBoolean("isautoupdate", true);
+        if (isautoupdate) {
+            Intent intent = new Intent(this, AutoUpdateService.class);
+            startService(intent);
+        }
+
         String cityName = weather.basic.cityName;
         String updateTime = weather.update.updateTime;
         String temperature = weather.now.temperature + "℃";

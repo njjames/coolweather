@@ -1,8 +1,13 @@
 package com.coolweather.android;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
@@ -14,13 +19,16 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ListView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
 import com.coolweather.android.db.Province;
+import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
 
@@ -56,6 +64,7 @@ public class ChooseAreaFragment extends Fragment {
     private City mSelectCity;
     private ProgressDialog mProgressDialog;
     private List<County> mCountyList;
+    private Switch mIsAutoUpdate;
 
     @Nullable
     @Override
@@ -66,6 +75,7 @@ public class ChooseAreaFragment extends Fragment {
         mBackButton = view.findViewById(R.id.back_button);
         mTitleText = view.findViewById(R.id.title_text);
         mListView = view.findViewById(R.id.list_view);
+        mIsAutoUpdate = view.findViewById(R.id.isAutoUpdate);
         //创建一个ArrayAdapter，然后设置给ListView，（这里是一个空的，在查询的时候在更新adapter）
         mAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, mDataList);
         mListView.setAdapter(mAdapter);
@@ -74,7 +84,7 @@ public class ChooseAreaFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+    public void onActivityCreated(@Nullable final Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         //给ListView设置点击事件
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -128,6 +138,33 @@ public class ChooseAreaFragment extends Fragment {
         });
         //查询所有的省
         queryProvinces();
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        boolean isautoupdate = sharedPreferences.getBoolean("isautoupdate", true);
+        mIsAutoUpdate.setChecked(isautoupdate);
+
+        mIsAutoUpdate.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                //改变后的状态是true，开启服务，否则关闭服务
+                if (b) {
+                    Intent intent = new Intent(getContext(), AutoUpdateService.class);
+                    getActivity().startService(intent);
+                }else {
+                    Intent intent = new Intent(getContext(), AutoUpdateService.class);
+                    getActivity().stopService(intent);
+                    //把服务停止会后还需要把定时任务给取消了，否则没用
+                    AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
+                    Intent serviceIntent = new Intent(getContext(), AutoUpdateService.class);
+                    PendingIntent pendingIntent = PendingIntent.getService(getContext(), 0, serviceIntent, 0);
+                    alarmManager.cancel(pendingIntent);
+                }
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putBoolean("isautoupdate", b);
+                editor.apply();
+            }
+        });
     }
 
     /**
